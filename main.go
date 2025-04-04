@@ -1,6 +1,7 @@
 package main
 
 import (
+	"booking-app/helper"
 	"fmt"
 	"strings"
 )
@@ -9,7 +10,14 @@ import (
 const confrenceTicket int = 50 
 var conferenceName = "Ecosystem Mixer"
 var remainingTicket uint = 50
-var bookings []string 
+var bookings = make([]UserData, 0)
+
+type UserData struct {
+	firstName string
+	lastName  string
+	email     string
+	userTickets uint
+}
 
 func main () {
 	// Print welcome message
@@ -17,15 +25,25 @@ func main () {
 
 	for remainingTicket > 0 {
 		// Getting user documents now to fill in variables
-		firstName, lastName, email, userTickets := inputData()
+		firstName, lastName, email, userTickets := helper.InputData()
 
 		// input validation for user variables
-		isNameValid, isEmailValid, isTicketsValid := validateInputs(firstName, lastName, email, userTickets, remainingTicket)
+		isNameValid, isEmailValid, isTicketsValid := validateInputs(
+			firstName, lastName, email, userTickets, remainingTicket )
 		
 		if isNameValid && isEmailValid && isTicketsValid {
 			// book tickets from the remaining
-			bookTicket(remainingTicket, userTickets, bookings, firstName, lastName, email)
+			bookings = bookTicket(remainingTicket, userTickets, bookings, firstName, lastName, email)
+			
+			// Disabled goroutine for now
+			helper.SendMail(email)
 
+			firstnames := getFirstNames(bookings)
+
+			fmt.Printf("Thank you %v %v for booking %v tickets\n You will recieve and email at %v shortly.\n", firstName, lastName, userTickets, email)
+			
+			fmt.Println(bookings)
+			fmt.Printf("The first names of the bookings are: %v\n", firstnames)
 			if remainingTicket == 0 {
 				fmt.Println("We are sold out")
 				break
@@ -49,19 +67,11 @@ func main () {
 	}
 }
 
-
-func welcomeStatement() {
-	fmt.Printf("Welcome to %v this booking service \n", conferenceName)
-	fmt.Printf("We have total of %v tickets and %v are stil available\n", confrenceTicket, remainingTicket)
-	fmt.Println("Get your tickets here to attend!")
-}
-
-func getFirstNames( bookings []string ) []string {
+func getFirstNames( bookings []UserData ) []string {
 	firstNames := []string{}
 	for _, booking := range bookings {
-		var first = strings.Fields(booking)
-		var firstName = first[0]
-		firstNames = append(firstNames, firstName)
+		var first = booking.firstName
+		firstNames = append(firstNames, first)
 	}
 
 	return firstNames
@@ -75,38 +85,54 @@ func validateInputs(firstName string, lastName string, email string, userTickets
 	return isNameValid, isEmailValid, isTicketsValid
 }
 
-func inputData() (string, string, string, uint) {
-	var firstName string
-	var lastName string
-	var email string
-	var userTickets uint
+// func inputData() (string, string, string, uint) {
+// 	var firstName string
+// 	var lastName string
+// 	var email string
+// 	var userTickets uint
 
-	// Getting user documents now to fill in  variables
-	fmt.Println("Enter your first name:")
-	fmt.Scan(&firstName)
+// 	// Getting user documents now to fill in  variables
+// 	fmt.Println("Enter your first name:")
+// 	fmt.Scan(&firstName)
 
-	fmt.Println("Enter your last name:")
-	fmt.Scan(&lastName)
+// 	fmt.Println("Enter your last name:")
+// 	fmt.Scan(&lastName)
 
-	fmt.Println("Enter your email:")
-	fmt.Scan(&email)
+// 	fmt.Println("Enter your email:")
+// 	fmt.Scan(&email)
 
-	fmt.Println("Enter your userTickets:")
-	fmt.Scan(&userTickets) 
+// 	fmt.Println("Enter your userTickets:")
+// 	fmt.Scan(&userTickets) 
 
-	return firstName, lastName, email, userTickets 
-}
+// 	return firstName, lastName, email, userTickets 
+// }
 
-func bookTicket(remainingTicket uint, userTickets uint, bookings []string, firstName string, lastName string, email string) {
+func bookTicket(
+	remainingTicket uint, 
+	userTickets uint, 
+	bookings []UserData, 
+	firstName string, 
+	lastName string, 
+	email string ) []UserData {
+
 	remainingTicket -= userTickets
-	bookings = append(bookings, firstName + " " + lastName)
+
+	userData := UserData {
+		firstName: firstName,
+		lastName: lastName,
+		email: email,
+		userTickets: userTickets,
+	}
+
+	bookings = append(bookings, userData)
 	fmt.Println(&remainingTicket, remainingTicket)
 
-	firstnames := getFirstNames(bookings)
+	return bookings
+	// firstnames := getFirstNames(bookings)
 
-	fmt.Printf("Thank you %v %v for booking %v tickets, you will recieve and email at %v shortly.\n", firstName, lastName, userTickets, email)
-	fmt.Println(bookings)
-	fmt.Printf("The first names of the bookings are: %v\n", firstnames)
+	// fmt.Printf("Thank you %v %v for booking %v tickets, you will recieve and email at %v shortly.\n", firstName, lastName, userTickets, email)
+	// fmt.Println(bookings)
+	// fmt.Printf("The first names of the bookings are: %v\n", firstnames)
 }
 
 
